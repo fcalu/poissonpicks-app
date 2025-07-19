@@ -15,11 +15,16 @@ from datetime import datetime, timedelta
 import re
 from dotenv import load_dotenv
 load_dotenv()
+from datetime import datetime, timedelta
+import pytz
 
 # --- CONFIGURACIÓN DE LA API-Football ---
 RAPIDAPI_KEY = os.getenv("RAPIDAPI_KEY")
 RAPIDAPI_HOST = "api-football-v1.p.rapidapi.com"
 API_BASE_URL = f"https://{RAPIDAPI_HOST}/v3"
+
+TZ_LOCAL = pytz.timezone("America/Mexico_City")
+
 
 # --- CACHE EN MEMORIA PARA LAS LLAMADAS A LA API (Python) ---
 api_cache = {}
@@ -546,8 +551,11 @@ def predict_for_teams(home_team_name_input, away_team_name_input, league_name):
 
     # 4. Determinar BTTS y Over/Under (basado en NN o Poisson si NN no es concluyente)
     # Priorizamos la NN para O2.5
-    final_o25_bool = nn_o25_prob > 0.5
-    final_o25_display = "+2.5" if final_o25_bool else "-2.5"
+    # Usa el marcador más probable para decidir el Over/Under
+    if (home_score + away_score) > 2.5:
+        final_o25_display = "+2.5"
+    else:
+        final_o25_display = "-2.5"
 
     # Para BTTS, si el marcador más probable es 0-X o X-0, entonces BTTS es NO.
     # Si ambos equipos anotan en el marcador probable, entonces BTTS es SÍ.
@@ -700,36 +708,39 @@ def predict_selected_teams():
 
 # Lista global para almacenar los partidos futuros cargados
 loaded_upcoming_matches = []
-def get_upcoming_matches(num_matches_per_league=10, days_ahead=3):
+def get_upcoming_matches(num_matches_per_league=30, days_ahead=4):
     matches = []
-    today = datetime.now()
-    end_date = today + timedelta(days=days_ahead)
-
+    now_utc = datetime.now(pytz.utc)
+    today_local = now_utc.astimezone(TZ_LOCAL)
+    end_date_local = today_local + timedelta(days=days_ahead)
     for league_id, league_name in LEAGUE_ID_TO_NAME.items():
         try:
             params = {
                 "league": league_id,
-                "season": today.year,
-                "from": today.strftime('%Y-%m-%d'),
-                "to": end_date.strftime('%Y-%m-%d')
+                "season": today_local.year,
+                "from": today_local.strftime('%Y-%m-%d'),
+                "to": end_date_local.strftime('%Y-%m-%d')
             }
             data = cached_api_call_python("/fixtures", params)
             fixtures = data.get("response", [])[:num_matches_per_league]
-
             for fixture in fixtures:
+                dt_utc = datetime.strptime(fixture['fixture']['date'], "%Y-%m-%dT%H:%M:%S%z")
+                dt_local = dt_utc.astimezone(TZ_LOCAL)
                 match = {
                     "fixture_id": fixture['fixture']['id'],
-                    "fixture_date": fixture['fixture']['date'],
+                    "fixture_date": dt_local.strftime("%Y-%m-%dT%H:%M:%S%z"),
                     "home_team_name": fixture['teams']['home']['name'],
                     "away_team_name": fixture['teams']['away']['name'],
+                    "home_team_logo": fixture['teams']['home']['logo'],
+                    "away_team_logo": fixture['teams']['away']['logo'],
                     "league_name": league_name
                 }
                 matches.append(match)
         except Exception as e:
             print(f"Error al obtener partidos para {league_name}: {e}")
             continue
-
     return matches
+
 
 
 def get_and_predict_upcoming_matches_gui(): 
