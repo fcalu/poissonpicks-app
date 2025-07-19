@@ -2,7 +2,7 @@ pandas
 numpy
 scipy
 scikit-learn
-tensorflow
+tensorflow==2.13.0
 requests
 python-dotenv
 streamlit
