@@ -1,10 +1,10 @@
-pandas==2.2.2 # O la versión que uses localmente
-numpy==1.26.4 # O la versión que uses localmente
-scipy==1.13.1 # O la versión que uses localmente
-scikit-learn==1.4.2 # O la versión que uses localmente
-tensorflow==2.10.0 # ¡Versión clave! Esta es compatible con Python 3.8-3.11
-keras==2.10.0 # Keras debe coincidir con TensorFlow
-Flask==3.0.3 # Si usas Flask
-python-dotenv==1.0.1 # O la versión que uses localmente
-joblib==1.4.2 # O la versión que uses localmente
-requests==2.32.3 # O la versión que uses localmente
+pandas==2.2.2 # O la versión específica que usas localmente
+numpy==1.26.4 # O la versión específica que usas localmente
+scipy==1.13.1 # O la versión específica que usas localmente
+scikit-learn==1.4.2 # O la versión específica que usas localmente
+tensorflow==2.11.0
+keras==2.11.0 # Añadido explícitamente y fijado a la misma versión de TensorFlow
+requests==2.32.3 # O la versión específica que usas localmente
+python-dotenv==1.0.1 # O la versión específica que usas localmente
+streamlit==1.36.0 # Ajusta a la versión que uses si es diferente
+joblib==1.4.2 # O la versión específica que usas localmente
